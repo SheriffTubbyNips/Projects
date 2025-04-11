@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1744354556 source:e:\documents\codestuff\ipshit\main.cpp
+	<iostream>
+	<fstream>
+	<list>
+	<stdio.h>
+
