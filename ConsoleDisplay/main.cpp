@@ -2,14 +2,14 @@
 #include <cmath>
 #include <windows.h>
 
+using namespace std;
+
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
 
 #define SETCURSOR(x,y) SetConsoleCursorPosition(hConsole,{x,y})
 #define slGrid 30
 #define gridOffsetX 5
-
-using namespace std;
 
 char grid[slGrid*slGrid];
 short curX,curY;
@@ -38,12 +38,11 @@ void displayGrid(){
 }
 
 void displayPlot(plot* p){
-    //curX = round( (float)((mer.dwMousePosition.X-gridOffsetX)-slGrid)/2 );
     for(int a=0;a<=p->nPoints;a++){
         SETCURSOR(slGrid+gridOffsetX+(p->coords[a].x*2),(slGrid/2)-p->coords[a].y);
         cout << p->graphic;
         SETCURSOR(70,a+1);
-        cout << p->coords[a].x << " : " << p->coords[a].y;
+        cout << a << " : " << p->coords[a].x << " : " << p->coords[a].y;
     }
 }
 
@@ -55,7 +54,7 @@ void createLine(plot* line,int X1,int Y1,int X2,int Y2){
     if(abs(dY)>abs(dX)){
         length = abs(dY);
         line->nPoints = length;
-        line->coords = new coord[(int)length+1];
+        line->coords = new coord[length+1];
         for(int a=0;a<=length;a++){
             line->coords[a].y = Y1+(a*abs(dY)/dY);
             line->coords[a].x = round( (line->coords[a].y-yInt)/slope );
@@ -64,7 +63,7 @@ void createLine(plot* line,int X1,int Y1,int X2,int Y2){
     else{
         length = abs(dX);
         line->nPoints = length;
-        line->coords = new coord[(int)length+1];
+        line->coords = new coord[length+1];
         for(int a=0;a<=length;a++){
             line->coords[a].x = X1+(a*(abs(dX)/dX));
             line->coords[a].y = round( slope*line->coords[a].x + yInt );
@@ -72,15 +71,12 @@ void createLine(plot* line,int X1,int Y1,int X2,int Y2){
     }
 }
 
-void createFilledSquare(plot* square,int X,int Y,int L, int W,char graphic){
-    square->nPoints = abs(L*W);
-    square->coords = new coord[abs(L*W)];
-    for(int a=Y;a<=L;a++){
-        for(int b=X;b<=W;b++){
-            square->graphic = '.';
-            square->coords[b+(a*W)].x = X+b;
-            square->coords[b+(a*W)].y = Y+a;
-        }
+void createFilledSquare(plot* square,int X,int Y,int L, int W){
+    square->nPoints =(L*W)-1;
+    square->coords = new coord[L*W];
+    for(int a=0;a<L*W;a++){
+        square->coords[a].x = X+(a%W);
+        square->coords[a].y = Y+(a/L);
     }
 }
 
@@ -115,11 +111,8 @@ int main()
 
     //Code go below here big man
     plot S1;
-    createLine(&S1,1,5,6,-14);
+    createLine(&S1,1,3,10,14);
     displayPlot(&S1);
-    plot S2;
-    createLine(&S2,10,2,5,9);
-    displayPlot(&S2);
 
 
     while(true){//Input buffer processing
