@@ -111,7 +111,7 @@ int main()
 
     //Code go below here big man
     plot S1;
-    createLine(&S1,1,3,10,14);
+    createFilledSquare(&S1,5,5,10,10);
     displayPlot(&S1);
 
 
