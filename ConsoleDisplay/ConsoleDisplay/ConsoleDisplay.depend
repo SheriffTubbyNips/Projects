@@ -1,7 +1,0 @@
-# depslib dependency file v1.0
-1748164982 source:e:\documents\codestuff\c++\practicalstuff\consoledisplay\main.cpp
-	<iostream>
-	<cmath>
-	<windows.h>
-	<fstream>
-
