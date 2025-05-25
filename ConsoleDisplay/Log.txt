@@ -1,0 +1,13 @@
+Line created:
+Slope = Undefined
+Y Intercept = 4
+dx: 0 dy: 6
+P0 = [4,4]
+P1 = [4,5]
+P2 = [4,6]
+P3 = [4,7]
+P4 = [4,8]
+P5 = [4,9]
+P6 = [4,10]
+--------------------
+
