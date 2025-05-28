@@ -2,6 +2,7 @@
 #include <cmath>
 #include <windows.h>
 #include <fstream>
+#include <list>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ using namespace std;
 #define gridOffsetX 5
 #define PI 3.1415926
 
-#define SETCURSOR(x,y) SetConsoleCursorPosition(hConsole,{x,y})
+#define SETCURSOR(x,y) SetConsoleCursorPosition(hConsole,{(short)(x),(short)(y)})
 #define RadToDeg(x) 180/PI*x
 #define DegToRad(x) PI/180*x
 
@@ -32,7 +33,7 @@ struct plot
 {
     char graphic = '?';
     int nPoints;
-    coord* coords;
+    list<coord> coords;
 };
 
 void displayGrid()
@@ -49,73 +50,93 @@ void displayGrid()
 
 void displayPlot(plot* p)
 {
-    for(int a=0;a<=p->nPoints;a++){
-        SETCURSOR(round(p->coords[a].x)*2+slGrid+gridOffsetX,(slGrid/2)-round(p->coords[a].y));
+    for(coord c:p->coords){
+        SETCURSOR(round(c.x)*2+slGrid+gridOffsetX,slGrid/2-round(c.y));
         cout << p->graphic;
     }
 }
 
-void createLine(plot* line,int X1,int Y1,int X2,int Y2,char g = 'X')
+void rotatePlot(plot* p,int deg,int originX = 0,int originY = 0)
 {
-    writeLog.open("log.txt",ofstream::app);
+    float x,y;
+    list<coord> newCoords;
+    coord c;
+    for(list<coord>::iterator i=p->coords.begin();i!=p->coords.end();i++){
+        c = *i;
+        x = (c.x-originX)*cos(DegToRad(deg)) - (c.y-originY)*sin(DegToRad(deg));
+        y = (c.x-originX)*sin(DegToRad(deg)) + (c.y-originY)*cos(DegToRad(deg));
+        c.x = x+originX;
+        c.y = y+originY;
+        newCoords.push_back(c);
+    }
+    p->coords = newCoords;
+}
+
+void createLine(plot* p,int X1,int Y1,int X2,int Y2,char g='X')
+{
     float dX = X2-X1;
     float dY = Y2-Y1;
-    int incX = dX!=0 ? abs(dX)/dX : 0;
-    int incY = dY!=0 ? abs(dY)/dY : 0;
-    float slope; bool slopeUndef = false;
+    int incX = dX != 0 ? abs(dX)/dX : 0;
+    int incY = dY != 0 ? abs(dY)/dY : 0;
+    float slope;
+    bool slopeUndef = false;
     isinf(dY/dX) ? slopeUndef = true : slope = dY/dX;
     float yInt = Y1-(slope*X1);
     int length = abs(dX)>abs(dY) ? abs(dX) : abs(dY);
-    line->nPoints = length;
-    line->coords = new coord[length+1];
-    line->graphic = g;
-    writeLog << "Line created:\n";
-    slopeUndef ? writeLog << "Slope = Undefined" : writeLog << "Slope = " << slope;
-    writeLog << "\nY Intercept = " << yInt << "\ndx: " << dX << " dy: " << dY << "\n";
+    coord c;
+    p->nPoints = length;
+    p->graphic = g;
     if(slopeUndef == true){ //Technically don't need this case but without it the point logs get messed up.
-        for(int a=0;a<=length;a++){
-            line->coords[a].x = a*incX+X1;
-            line->coords[a].y = a*incY+Y1;
-            writeLog << "P" << a << " = [" << line->coords[a].x << "," << line->coords[a].y << "]\n";
+        for(int a = 0; a <= length; a++){
+            c.x = a*incX+X1;
+            c.y = a*incY+Y1;
+            p->coords.push_back(c);
         }
     }
     else if(abs(dY)>abs(dX)){
-        for(int a=0;a<=length;a++){
-            line->coords[a].y = a*incY+Y1;
-            line->coords[a].x = (line->coords[a].y-yInt)/slope;
-            writeLog << "P" << a << " = [" << line->coords[a].x << "," << line->coords[a].y << "]\n";
+        for(int a = 0; a <= length; a++){
+            c.y = a*incY+Y1;
+            c.x = (c.y-yInt)/slope;
+            p->coords.push_back(c);
         }
     }
     else{
-        for(int a=0;a<=length;a++){
-            line->coords[a].x = a*incX+X1;
-            line->coords[a].y = slope*line->coords[a].x + yInt;
-            writeLog << "P" << a << " = [" << line->coords[a].x << "," << line->coords[a].y << "]\n";
+        for(int a = 0; a <= length; a++){
+            c.x = a*incX+X1;
+            c.y = slope*c.x + yInt;
+            p->coords.push_back(c);
         }
     }
-    writeLog << "--------------------\n\n";
-    writeLog.close();
 }
 
-void rotatePlot(plot* p,int deg)
+void createBox(plot* p,int x1,int y1,int x2,int y2,char g='X')
 {
-    float x,y;
-    for(int a=0;a<=p->nPoints;a++){
-        x = p->coords[a].x*cos(DegToRad(deg)) - p->coords[a].y*sin(DegToRad(deg));
-        y = p->coords[a].x*sin(DegToRad(deg)) + p->coords[a].y*cos(DegToRad(deg));
-        p->coords[a].x = x;
-        p->coords[a].y = y;
+    createLine(p,x1,y1,x2,y1,g);
+    createLine(p,x1,y2,x2,y2,g);
+    createLine(p,x1,y1,x1,y2,g);
+    createLine(p,x2,y1,x2,y2,g);
+}
+
+void createFilledBox(plot* p,int x1,int y1,int x2,int y2,char g='X')
+{
+    for(int a = 0; a <= y2-y1; a++){
+        createLine(p,x1,y1+a,x2,y1+a,g);
     }
 }
 
-void createFilledSquare(plot* square,int X,int Y,int L, int W)
+void createCircle(plot* p,int x,int y,int r,char g='X')
 {
-    square->nPoints =(L*W)-1;
-    square->coords = new coord[L*W];
-    for(int a=0;a<L*W;a++){
-        square->coords[a].x = X+(a%W);
-        square->coords[a].y = Y+(a/L);
+    list<coord> rasterCoords;
+    coord point = {(float)x,(float)(y+r)};
+    p->coords.push_back(point);
+    for(int a = 0; a < 360; a++){
+        if(round(p->coords.back().x) != round(rasterCoords.back().x) || round(p->coords.back().y) != round(rasterCoords.back().y)){
+            rasterCoords.push_back(p->coords.back());
+        }
+        rotatePlot(p,-1,x,y);
     }
+    rasterCoords.pop_back(); //Revolving creates a redundant start-point. Remove it here.
+    p->coords = rasterCoords;
 }
 
 void MouseEventProc(MOUSE_EVENT_RECORD mer)
@@ -140,7 +161,7 @@ void GetInput()
     INPUT_RECORD inputBuf[100];
     DWORD inputsRead;
     ReadConsoleInput(hInput,inputBuf,100,&inputsRead); //Fill input buffer
-        for(int a=0;a<inputsRead;a++){//Loop through buffer
+        for(int a=0;a<(int)inputsRead;a++){//Loop through buffer
             switch(inputBuf[a].EventType){//Call appropriate event functions
                 case MOUSE_EVENT:
                     MouseEventProc(inputBuf[a].Event.MouseEvent);
@@ -164,24 +185,14 @@ int main()
     curInfo.bVisible = FALSE;
     SetConsoleCursorInfo(hConsole,&curInfo);
     SetConsoleMode(hConsole,mode);
-    writeLog.open("Log.txt", ofstream::trunc);
-    writeLog.close();
 
     //Code go below here big man
-    plot S1,S2,S3,S4,S5;
     displayGrid();
-    createLine(&S1,4,4,4,10,'1');
+    plot S1;
+    createBox(&S1,5,5,11,11,'O');
+    rotatePlot(&S1,-45,8,8);
     displayPlot(&S1);
-    Sleep(100);
-    int b = 90;
-    for(int a=1;a<=360/b;a++){
-        rotatePlot(&S1,-b);
-        displayPlot(&S1);
-        SETCURSOR(0,slGrid+5);
-        cout << a;
-        Sleep(100);
-    }
-
+    SETCURSOR(0,slGrid+5); cout<<S1.coords.size();
     while(true){//Input buffer processing
         GetInput();
     }
