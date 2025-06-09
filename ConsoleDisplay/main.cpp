@@ -6,9 +6,10 @@
 
 using namespace std;
 
-#define slGrid 30
-#define gridOffsetX 5
 #define PI 3.1415926
+
+#define TEXTDEFAULT FOREGROUND_BLUE|FOREGROUND_GREEN|FOREGROUND_RED
+#define BGWHITE BACKGROUND_RED|BACKGROUND_GREEN|BACKGROUND_BLUE
 
 #define SETCURSOR(x,y) SetConsoleCursorPosition(hConsole,{(short)(x),(short)(y)})
 #define RadToDeg(x) 180/PI*x
@@ -18,9 +19,11 @@ HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
 DWORD mode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ~ENABLE_QUICK_EDIT_MODE;
 
-ofstream writeLog;
+int OFFSET_X = 5;
+int OFFSET_Y = 2;
+int SLGRID = 30;
+int PIXELWIDTH = 2;
 
-char grid[slGrid*slGrid];
 short curX,curY;
 
 struct coord
@@ -31,28 +34,21 @@ struct coord
 
 struct plot
 {
+    WORD colour = FOREGROUND_BLUE|FOREGROUND_GREEN|FOREGROUND_RED;
     char graphic = '?';
-    int nPoints;
+    int nPoints = 0; //This can prob be considered depreciated. Just get the size of the list lol.
     list<coord> coords;
 };
-
-void displayGrid()
-{
-    SETCURSOR(0,0);
-    for(int a=(slGrid/2)*-1;a<=slGrid/2;a++){
-        for(int b=0;b<gridOffsetX;b++){cout << " ";} //Horizontal offset for printing grid
-        for(int b=(slGrid/2)*-1;b<=slGrid/2;b++){
-            cout << '.' << " ";
-        }
-        cout << "\n";
-    }
-}
 
 void displayPlot(plot* p)
 {
     for(coord c:p->coords){
-        SETCURSOR(round(c.x)*2+slGrid+gridOffsetX,slGrid/2-round(c.y));
-        cout << p->graphic;
+        SETCURSOR(round(c.x)*2+SLGRID+OFFSET_X,SLGRID/2-round(c.y)+OFFSET_Y);
+        SetConsoleTextAttribute(hConsole,p->colour);
+        for(int a=1;a<=PIXELWIDTH;a++){
+                cout << p->graphic;
+        }
+        SetConsoleTextAttribute(hConsole,TEXTDEFAULT);
     }
 }
 
@@ -124,11 +120,12 @@ void createFilledBox(plot* p,int x1,int y1,int x2,int y2,char g='X')
     }
 }
 
-void createCircle(plot* p,int x,int y,int r,char g='X')
+void createCircle(plot* p,int x,int y,int r,char g = 'X')
 {
     list<coord> rasterCoords;
     coord point = {(float)x,(float)(y+r)};
     p->coords.push_back(point);
+    p->graphic = g;
     for(int a = 0; a < 360; a++){
         if(round(p->coords.back().x) != round(rasterCoords.back().x) || round(p->coords.back().y) != round(rasterCoords.back().y)){
             rasterCoords.push_back(p->coords.back());
@@ -145,12 +142,12 @@ void MouseEventProc(MOUSE_EVENT_RECORD mer)
     #define MOUSE_HWHEELED 0x0008
     #endif
     if(mer.dwEventFlags == MOUSE_MOVED){
-        curX = round( (float)((mer.dwMousePosition.X-gridOffsetX)-slGrid)/2 );
-        curY = ((slGrid/2)-mer.dwMousePosition.Y);
-        if((curX<=slGrid/2 && curX>=-slGrid/2) && (curY<=slGrid/2 && curY>=-slGrid/2)){
-            SETCURSOR(0,slGrid+2);
+        curX = round( (float)(mer.dwMousePosition.X-OFFSET_X-SLGRID)/2 );
+        curY = SLGRID/2-mer.dwMousePosition.Y+OFFSET_Y;
+        if((curX<=SLGRID/2 && curX>=-SLGRID/2) && (curY<=SLGRID/2 && curY>=-SLGRID/2)){
+            SETCURSOR(0,SLGRID+OFFSET_Y+2);
             cout<< "                               \n                                                 "; //Clear old text before writing new text best I can do because CLS breaks stuff 8^)
-            SETCURSOR(0,slGrid+2);
+            SETCURSOR(0,SLGRID+OFFSET_Y+2);
             cout << "Grid position is X:" << curX << " Y:" << curY << "\nAbsolute cursor position is X:" << mer.dwMousePosition.X << " Y:" << mer.dwMousePosition.Y;
         }
     }
@@ -186,13 +183,25 @@ int main()
     SetConsoleCursorInfo(hConsole,&curInfo);
     SetConsoleMode(hConsole,mode);
 
+    plot grid;
+    createFilledBox(&grid,-SLGRID/2,-SLGRID/2,SLGRID/2,SLGRID/2,'.');
+    plot axisLine;
+    axisLine.colour = FOREGROUND_RED;
+    createLine(&axisLine,-SLGRID/2,0,SLGRID/2,0,'.');
+    createLine(&axisLine,0,-SLGRID/2,0,SLGRID/2,'.');
+    displayPlot(&grid);
+    displayPlot(&axisLine);
     //Code go below here big man
-    displayGrid();
     plot S1;
-    createBox(&S1,5,5,11,11,'O');
-    rotatePlot(&S1,-45,8,8);
-    displayPlot(&S1);
-    SETCURSOR(0,slGrid+5); cout<<S1.coords.size();
+    S1.colour = BGWHITE;
+    createLine(&S1,5,5,5,10,' ');
+    for(int a=0;a<=360;a++){
+        rotatePlot(&S1,-1,5,5);
+        displayPlot(&S1);
+    }
+
+
+
     while(true){//Input buffer processing
         GetInput();
     }
