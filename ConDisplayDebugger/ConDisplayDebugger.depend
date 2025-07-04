@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1750513955 source:e:\documents\codestuff\c++\practicalstuff\condisplaydebugger\main.cpp
+	<iostream>
+	"E:\\Documents\\CodeStuff\\C++\\Headers\\ConDisplay.h"
+
+1750453439 e:\\documents\\codestuff\\c++\\headers\\condisplay.h
+	<cmath>
+	<windows.h>
+	<fstream>
+	<list>
+
+1750647763 source:e:\documents\codestuff\c++\practicalstuff\old console graphics stuff\condisplaydebugger\main.cpp
+	<iostream>
+	"E:\\Documents\\CodeStuff\\C++\\Headers\\ConDisplay.h"
+
