@@ -1,15 +1,25 @@
 # depslib dependency file v1.0
-1750710086 source:e:\documents\codestuff\c++\practicalstuff\condisplayv2testing\main.cpp
+1751284161 source:e:\documents\codestuff\c++\practicalstuff\condisplayv2testing\main.cpp
 	<iostream>
 	"E:\\Documents\\CodeStuff\\C++\\Headers\\ConDisplayv2.h"
-	"E:\\Documents\\CodeStuff\\C++\\Headers\\TubbyRaster.h"
 
-1750700653 e:\\documents\\codestuff\\c++\\headers\\condisplayv2.h
+1751284189 e:\\documents\\codestuff\\c++\\headers\\condisplayv2.h
+	<windows.h>
+	<bitset>
+	<fstream>
+	<cmath>
+
+1750984713 e:\\documents\\codestuff\\c++\\headers\\tubbyraster.h
+	<cmath>
+	<windows.h>
+	<list>
+
+1750700653 e:\documents\codestuff\c++\practicalstuff\condisplayv2testing\condisplayv2.h
 	<windows.h>
 	<bitset>
 	<fstream>
 
-1750700039 e:\\documents\\codestuff\\c++\\headers\\tubbyraster.h
+1750700039 e:\documents\codestuff\c++\practicalstuff\condisplayv2testing\tubbyraster.h
 	<cmath>
 	<windows.h>
 	<fstream>

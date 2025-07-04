@@ -1,19 +1,50 @@
 #include <iostream>
 #include "E:\\Documents\\CodeStuff\\C++\\Headers\\ConDisplayv2.h"
-#include "E:\\Documents\\CodeStuff\\C++\\Headers\\TubbyRaster.h"
 
 using namespace std;
 
+static WORD BACKGROUND_WHITE = BACKGROUND_BLUE|BACKGROUND_RED|BACKGROUND_GREEN;
 HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
 int colour = 0b0101;
-Frame* activeFrame;
-plot* imageBorder;
-plot topHeader;
+int canvasX = 13;
+int canvasY = 1;
+
+Image* canvas;
+Image* canvasBorder;
+Image UI(12,30,"UI");
+
+void (*MouseEventProc)(MOUSE_EVENT_RECORD m);
+void (*KeyEventProc)(KEY_EVENT_RECORD k);
+
+void SetCursor(int x,int y)
+{
+    SetConsoleCursorPosition(conOut,{(short)x,(short)y});
+}
+
+void Print(string text,int x,int y,WORD c)
+{
+    SetConsoleCursorPosition(conOut,{(short)x,(short)y});
+    SetConsoleTextAttribute(conOut,c);
+    cout << text;
+    SetConsoleTextAttribute(conOut,0);
+}
+
+void RefreshDisplay()
+{
+    //Redraw image canvas
+    canvas->Display(canvasX,canvasY);
+
+    //Redraw UI stuff
+    canvasBorder->Display(canvasX-1,canvasY-1);
+    UI.Display();
+    SetCursor(0,0);
+    Print("File:" + canvas->name,0,0,BACKGROUND_WHITE);
+}
 
 void NewIMG()
 {
+    string name;
     string exit;
-    string name = "default";
     int x,y;
     while(true)
     {
@@ -32,38 +63,32 @@ void NewIMG()
         cin >> exit;
         if(exit == "y"){break;}
     }
-    activeFrame = new Frame(1,5,x,y);
-    imageBorder = new plot;
-    imageBorder->createBox(0,3,x+1,y+1);
+    delete canvas;
+    delete canvasBorder;
+    canvas = new Image(x,y,name);
+    canvasBorder = new Image(x+2,y+2);
+    canvasBorder->DrawBox(0,0,x+2,y+2,0b1111);
     ClearDisplay();
-    imageBorder->displayPlot();
-    topHeader.displayPlot();
-    SetConsoleCursorPosition(conOut,{0,0});
-    SetConsoleTextAttribute(conOut,BGWHITE);
-    cout << name << "|Press number keys to change colour";
 }
 
-void RefreshDisplay()
+void Draw(MOUSE_EVENT_RECORD m)
 {
-    activeFrame->Display();
-}
-
-void MouseEventProc(MOUSE_EVENT_RECORD m)
-{
-    #ifndef MOUSE_HWHEELED
-    #define MOUSE_HWHEELED 0x0008
-    #endif
     if(m.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED){
-        activeFrame->Draw((m.dwMousePosition.X/2)-activeFrame->posX,m.dwMousePosition.Y-activeFrame->posY,colour);
+        canvas->Draw( m.dwMousePosition.X - canvasX, m.dwMousePosition.Y - canvasY, colour );
         RefreshDisplay();
     }
 }
 
-void KeyEventProc(KEY_EVENT_RECORD k){
+void ColourMenu(MOUSE_EVENT_RECORD m)
+{
+
+}
+
+void KeyDefault(KEY_EVENT_RECORD k){
     switch(k.wVirtualKeyCode)
     {
         case 'S':
-            activeFrame->Save();
+            canvas->Save();
         break;
         case 'L':
         break;
@@ -110,6 +135,8 @@ void GetInput(){ //Does what it says on the tin
                     KeyEventProc(inputBuffer[a].Event.KeyEvent);
                 break;
                 case WINDOW_BUFFER_SIZE_EVENT:
+                    ClearDisplay();
+                    RefreshDisplay();
                 break;
                 case MENU_EVENT:
                 break;
@@ -119,18 +146,57 @@ void GetInput(){ //Does what it says on the tin
     }
 }
 
+struct ScreenHandler
+{
+    struct Data
+    {
+        char character = ' ';
+        WORD colour = 0;
+    };
+    int sizeX;
+    int sizeY;
+
+    Data** screenBuffer;
+
+    ScreenHandler(int x, int y) : sizeX(x), sizeY(y)
+    {
+        screenBuffer = new Data*[sizeY];
+        for(int i = 0; i < sizeY; i++)
+        {
+            screenBuffer[i] = new Data[sizeX];
+        }
+    }
+
+    void Display()
+    {
+        for(int y = 0; y < sizeY; y++)
+        {
+            for(int x = 0; x < sizeX; x++)
+            {
+                SetConsoleTextAttribute(conOut,screenBuffer[y][x].colour);
+                cout << screenBuffer[y][x].character;
+            }
+        }
+    }
+
+
+};
+
 int main()
 {
     //IDFK optimize this later it works rn
     //Seriously remember to just get this working and focus on cleaning it up later
     //Better to pad out your portfolio with literally anything than obsess over nitpicks
+
+    //Buncha initialization stuff
     CONSOLE_CURSOR_INFO curInfo;
-    GetConsoleCursorInfo(hConsole,&curInfo);
+    GetConsoleCursorInfo(conOut,&curInfo);
     curInfo.bVisible = FALSE;
-    SetConsoleCursorInfo(hConsole,&curInfo);
-    topHeader.createFilledBox(0,0,30,2);
-    NewIMG();
-    RefreshDisplay();
+    SetConsoleCursorInfo(conOut,&curInfo);
+
+    MouseEventProc = Draw;
+    ScreenHandler S;
+    S.Display();
 
     while(true)
     {
